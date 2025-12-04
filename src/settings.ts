@@ -8,7 +8,7 @@ export interface GoogleDriveSyncSettings {
 	refreshToken: string;
 	syncFolderId: string;
 	lastSyncTime: number;
-	filesOnLastSync: string[];
+	filesOnLastSync: string[]; // Добавлено для отслеживания удалений
 }
 
 export const DEFAULT_SETTINGS: GoogleDriveSyncSettings = {
@@ -18,7 +18,7 @@ export const DEFAULT_SETTINGS: GoogleDriveSyncSettings = {
 	refreshToken: '',
 	syncFolderId: '',
 	lastSyncTime: 0,
-	filesOnLastSync: []
+	filesOnLastSync: [] // Инициализация пустого списка
 }
 
 interface IGoogleDriveSyncPlugin {

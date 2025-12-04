@@ -34,12 +34,15 @@ export class SyncService {
             }
         }
 
+        // Инициализируем историю файлов для отслеживания удалений
         const historySet = new Set(this.settings.filesOnLastSync || []);
         const newHistorySet = new Set<string>();
 
         try {
+            // Передаем сеты в рекурсивную функцию
             await this.syncFolder('', this.settings.syncFolderId, historySet, newHistorySet);
 
+            // Сохраняем новое состояние файлов после успешной синхронизации
             this.settings.filesOnLastSync = Array.from(newHistorySet);
             this.settings.lastSyncTime = Date.now();
             await this.driveService.saveSettings();
@@ -70,10 +73,13 @@ export class SyncService {
 
             if (file instanceof TFile) {
                 if (!remoteFile) {
+                    // Файл есть локально, но нет удаленно.
+                    // Если он был в истории -> значит удален удаленно -> удаляем локально.
                     if (historySet.has(file.path)) {
                         new Notice(`Deleting local ${file.name} (remote deletion detected)...`);
                         await this.app.vault.delete(file);
                     } else {
+                        // Иначе это новый локальный файл -> загружаем.
                         new Notice(`Uploading ${file.name}...`);
                         const content = await this.app.vault.readBinary(file);
                         await this.driveService.uploadFile(file.name, remoteFolderId, content);
@@ -119,15 +125,18 @@ export class SyncService {
             }
         }
 
+        // Проходим по оставшимся удаленным файлам (которых нет локально)
         for (const [name, remoteFile] of remoteFileMap) {
              const currentPath = localPath === '' ? name : `${localPath}/${name}`;
 
+             // Если файл был в истории, но сейчас его нет локально -> значит удален локально -> удаляем удаленно
              if (historySet.has(currentPath)) {
                  new Notice(`Deleting remote ${name} (local deletion detected)...`);
                  await this.driveService.trashFile(remoteFile.id);
                  continue;
              }
 
+             // Иначе это новый удаленный файл -> скачиваем
              if (remoteFile.mimeType === 'application/vnd.google-apps.folder') {
                  if (!this.app.vault.getAbstractFileByPath(currentPath)) {
                      await this.app.vault.createFolder(currentPath);
