@@ -1,94 +1,80 @@
-# Obsidian Sample Plugin
+# Google Drive Sync for Obsidian
 
-This is a sample plugin for Obsidian (https://obsidian.md).
+A community plugin to synchronize your Obsidian vault with Google Drive.
 
-This project uses TypeScript to provide type checking and documentation.
-The repo depends on the latest plugin API (obsidian.d.ts) in TypeScript Definition format, which contains TSDoc comments describing what it does.
+## Features
 
-This sample plugin demonstrates some of the basic functionality the plugin API can do.
-- Adds a ribbon icon, which shows a Notice when clicked.
-- Adds a command "Open Sample Modal" which opens a Modal.
-- Adds a plugin setting tab to the settings page.
-- Registers a global click event and output 'click' to the console.
-- Registers a global interval which logs 'setInterval' to the console.
+- **Sync**: Upload new local files, download new remote files, and update existing files based on modification time.
+- **Bi-directional Deletions**: Deleting a file on one side will delete it on the other (if previously synced).
+- **Secure**: Uses your own Google Cloud credentials ("Bring Your Own Key").
+- **Control**: Syncs to a dedicated folder (`ObsidianVault`) in Google Drive.
 
-## First time developing plugins?
+## Installation
 
-Quick starting guide for new plugin devs:
+Since this plugin is not yet in the official community list, you need to install it manually.
 
-- Check if [someone already developed a plugin for what you want](https://obsidian.md/plugins)! There might be an existing plugin similar enough that you can partner up with.
-- Make a copy of this repo as a template with the "Use this template" button (login to GitHub if you don't see it).
-- Clone your repo to a local development folder. For convenience, you can place this folder in your `.obsidian/plugins/your-plugin-name` folder.
-- Install NodeJS, then run `npm i` in the command line under your repo folder.
-- Run `npm run dev` to compile your plugin from `main.ts` to `main.js`.
-- Make changes to `main.ts` (or create new `.ts` files). Those changes should be automatically compiled into `main.js`.
-- Reload Obsidian to load the new version of your plugin.
-- Enable plugin in settings window.
-- For updates to the Obsidian API run `npm update` in the command line under your repo folder.
+### 1. Build the Plugin
+1. Open a terminal in the project folder.
+2. Run `npm install` to install dependencies.
+3. Run `npm run build` to compile the code. This will generate a `main.js` file.
 
-## Releasing new releases
+### 2. Install into Obsidian
+1. Open your Obsidian vault folder.
+2. Navigate to `.obsidian/plugins/` (you might need to enable hidden files to see `.obsidian`).
+3. Create a new folder named `google-drive-sync`.
+4. Copy the following files from the project folder into this new folder:
+   - `main.js`
+   - `manifest.json`
+   - `styles.css`
 
-- Update your `manifest.json` with your new version number, such as `1.0.1`, and the minimum Obsidian version required for your latest release.
-- Update your `versions.json` file with `"new-plugin-version": "minimum-obsidian-version"` so older versions of Obsidian can download an older version of your plugin that's compatible.
-- Create new GitHub release using your new version number as the "Tag version". Use the exact version number, don't include a prefix `v`. See here for an example: https://github.com/obsidianmd/obsidian-sample-plugin/releases
-- Upload the files `manifest.json`, `main.js`, `styles.css` as binary attachments. Note: The manifest.json file must be in two places, first the root path of your repository and also in the release.
-- Publish the release.
+### 3. Enable the Plugin
+1. Open Obsidian.
+2. Go to **Settings > Community plugins**.
+3. Turn off **Restricted mode** if enabled.
+4. Click the "Reload plugins" icon.
+5. Find **Google Drive Sync** in the list and enable it.
 
-> You can simplify the version bump process by running `npm version patch`, `npm version minor` or `npm version major` after updating `minAppVersion` manually in `manifest.json`.
-> The command will bump version in `manifest.json` and `package.json`, and add the entry for the new version to `versions.json`
+## Configuration Guide
 
-## Adding your plugin to the community plugin list
+To use this plugin, you need to create your own Google Cloud Project and generate OAuth 2.0 credentials.
 
-- Check the [plugin guidelines](https://docs.obsidian.md/Plugins/Releasing/Plugin+guidelines).
-- Publish an initial version.
-- Make sure you have a `README.md` file in the root of your repo.
-- Make a pull request at https://github.com/obsidianmd/obsidian-releases to add your plugin.
+### Step 1: Create a Google Cloud Project
+1. Go to the [Google Cloud Console](https://console.cloud.google.com/).
+2. Create a new project (e.g., named "Obsidian Sync").
+3. Navigate to **APIs & Services > Library**.
+4. Search for "Google Drive API" and click **Enable**.
 
-## How to use
+### Step 2: Configure OAuth Consent Screen
+1. Navigate to **APIs & Services > OAuth consent screen**.
+2. Select **External** User Type and click **Create**.
+3. Fill in the required fields (App name, User support email, Developer contact).
+4. Click **Save and Continue**.
+5. Add Scope: `https://www.googleapis.com/auth/drive`.
+6. Add your email to **Test Users**.
 
-- Clone this repo.
-- Make sure your NodeJS is at least v16 (`node --version`).
-- `npm i` or `yarn` to install dependencies.
-- `npm run dev` to start compilation in watch mode.
+### Step 3: Create Credentials
+1. Navigate to **APIs & Services > Credentials**.
+2. Click **Create Credentials > OAuth client ID**.
+3. Select **Web application**.
+4. **Important**: Under **Authorized redirect URIs**, add exactly:
+   `https://obsidian.md`
+5. Click **Create** and copy the **Client ID** and **Client Secret**.
 
-## Manually installing the plugin
+### Step 4: Authorize in Obsidian
+1. In Obsidian, go to **Settings > Google Drive Sync**.
+2. Paste your **Client ID** and **Client Secret**.
+3. Click **Generate Auth URL**.
+4. Authorize the app in the browser.
+5. You will be redirected to `obsidian.md`. Copy the `code` parameter from the URL bar (everything after `code=` up to `&`).
+6. Paste the code into the plugin settings and click **Login**.
 
-- Copy over `main.js`, `styles.css`, `manifest.json` to your vault `VaultFolder/.obsidian/plugins/your-plugin-id/`.
+## Usage
 
-## Improve code quality with eslint (optional)
-- [ESLint](https://eslint.org/) is a tool that analyzes your code to quickly find problems. You can run ESLint against your plugin to find common bugs and ways to improve your code. 
-- To use eslint with this project, make sure to install eslint from terminal:
-  - `npm install -g eslint`
-- To use eslint to analyze this project use this command:
-  - `eslint main.ts`
-  - eslint will then create a report with suggestions for code improvement by file and line number.
-- If your source code is in a folder, such as `src`, you can use eslint with this command to analyze all files in that folder:
-  - `eslint ./src/`
+- Click the "Sync with Google Drive" ribbon icon (refresh icon) to start a sync.
+- Or use the command "Sync Now" from the Command Palette.
+- The first sync creates `ObsidianVault` in Drive.
+- Subsequent syncs will propagate changes and deletions.
 
-## Funding URL
+## Development
 
-You can include funding URLs where people who use your plugin can financially support it.
-
-The simple way is to set the `fundingUrl` field to your link in your `manifest.json` file:
-
-```json
-{
-    "fundingUrl": "https://buymeacoffee.com"
-}
-```
-
-If you have multiple URLs, you can also do:
-
-```json
-{
-    "fundingUrl": {
-        "Buy Me a Coffee": "https://buymeacoffee.com",
-        "GitHub Sponsor": "https://github.com/sponsors",
-        "Patreon": "https://www.patreon.com/"
-    }
-}
-```
-
-## API Documentation
-
-See https://github.com/obsidianmd/obsidian-api
+- `npm run dev`: Build in watch mode.
