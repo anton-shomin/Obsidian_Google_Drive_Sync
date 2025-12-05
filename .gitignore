@@ -1,6 +1,4 @@
 node_modules/
 main.js
-manifest.json
-styles.css
 dist/
 .DS_Store

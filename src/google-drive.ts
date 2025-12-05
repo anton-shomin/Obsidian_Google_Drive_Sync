@@ -106,9 +106,21 @@ export class GoogleDriveService {
     }
 
     async listFiles(folderId: string): Promise<any[]> {
+        let files: any[] = [];
+        let pageToken: string | undefined = undefined;
         const query = `'${folderId}' in parents and trashed = false`;
-        const response = await this.request(`https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(query)}&fields=files(id, name, mimeType, modifiedTime, md5Checksum)`);
-        return response.json.files;
+
+        do {
+            const url: string = `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(query)}&fields=nextPageToken,files(id, name, mimeType, modifiedTime, md5Checksum)&pageSize=1000${pageToken ? `&pageToken=${pageToken}` : ''}`;
+            const response: any = await this.request(url);
+            const data: any = response.json;
+            if (data.files) {
+                files = files.concat(data.files);
+            }
+            pageToken = data.nextPageToken;
+        } while (pageToken);
+
+        return files;
     }
 
     async getFileMetadata(fileId: string): Promise<any> {
@@ -122,49 +134,73 @@ export class GoogleDriveService {
     }
 
     async uploadFile(name: string, parentId: string, content: ArrayBuffer, mimeType: string = 'text/markdown'): Promise<any> {
-        const boundary = 'foo_bar_baz';
-        const metadata = {
-            name: name,
-            parents: [parentId],
-            mimeType: mimeType
-        };
+        try {
+            const boundary = 'foo_bar_baz';
+            const metadata = {
+                name: name,
+                parents: [parentId],
+                mimeType: mimeType
+            };
 
-        const metadataPart = `--${boundary}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${JSON.stringify(metadata)}\r\n`;
-        const mediaPartHeader = `--${boundary}\r\nContent-Type: ${mimeType}\r\n\r\n`;
-        const endBoundary = `\r\n--${boundary}--`;
+            const metadataPart = `--${boundary}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${JSON.stringify(metadata)}\r\n`;
+            const mediaPartHeader = `--${boundary}\r\nContent-Type: ${mimeType}\r\n\r\n`;
+            const endBoundary = `\r\n--${boundary}--`;
 
-        const encoder = new TextEncoder();
-        const part1 = encoder.encode(metadataPart);
-        const part2 = encoder.encode(mediaPartHeader);
-        const part3 = new Uint8Array(content);
-        const part4 = encoder.encode(endBoundary);
+            const encoder = new TextEncoder();
+            const part1 = encoder.encode(metadataPart);
+            const part2 = encoder.encode(mediaPartHeader);
+            const part3 = new Uint8Array(content);
+            const part4 = encoder.encode(endBoundary);
 
-        const body = new Uint8Array(part1.length + part2.length + part3.length + part4.length);
-        body.set(part1);
-        body.set(part2, part1.length);
-        body.set(part3, part1.length + part2.length);
-        body.set(part4, part1.length + part2.length + part3.length);
+            const body = new Uint8Array(part1.length + part2.length + part3.length + part4.length);
+            body.set(part1);
+            body.set(part2, part1.length);
+            body.set(part3, part1.length + part2.length);
+            body.set(part4, part1.length + part2.length + part3.length);
 
-        const response = await this.request('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
-            method: 'POST',
-            headers: {
-                'Content-Type': `multipart/related; boundary=${boundary}`
-            },
-            body: body.buffer
-        });
+            const response = await this.request('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': `multipart/related; boundary=${boundary}`
+                },
+                body: body.buffer
+            });
 
-        return response.json;
+            return response.json;
+        } catch (e) {
+            console.error(`Failed to upload file ${name}`, e);
+            throw e;
+        }
     }
 
     async updateFile(fileId: string, content: ArrayBuffer, mimeType: string = 'text/markdown'): Promise<any> {
-        const response = await this.request(`https://www.googleapis.com/upload/drive/v3/files/${fileId}?uploadType=media`, {
-            method: 'PATCH',
-            headers: {
-                'Content-Type': mimeType
-            },
-            body: content
-        });
-        return response.json;
+        try {
+            const response = await this.request(`https://www.googleapis.com/upload/drive/v3/files/${fileId}?uploadType=media`, {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': mimeType
+                },
+                body: content
+            });
+            return response.json;
+        } catch (e) {
+            console.error(`Failed to update file ${fileId}`, e);
+            throw e;
+        }
+    }
+
+    async trashFile(fileId: string): Promise<any> {
+        try {
+            const response = await this.request(`https://www.googleapis.com/drive/v3/files/${fileId}`, {
+                 method: 'PATCH',
+                 headers: { 'Content-Type': 'application/json' },
+                 body: JSON.stringify({ trashed: true })
+            });
+            return response.json;
+        } catch (e) {
+            console.error(`Failed to trash file ${fileId}`, e);
+            throw e;
+        }
     }
 
     async createFolder(name: string, parentId: string): Promise<any> {

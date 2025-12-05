@@ -1,82 +1,122 @@
-# Google Drive Sync for Obsidian
+Google Drive Sync for Obsidian
 
 A community plugin to synchronize your Obsidian vault with Google Drive.
 
-## Features
+Features
 
-- **Sync**: Upload new local files, download new remote files, and update existing files based on modification time.
-- **Secure**: Uses your own Google Cloud credentials ("Bring Your Own Key").
-- **Control**: Syncs to a dedicated folder in Google Drive.
+Sync: Upload new local files, download new remote files, and update existing files based on modification time.
 
-## Setup Guide
+Bi-directional Deletions: Deleting a file on one side will delete it on the other (if previously synced).
 
-To use this plugin, you need to create your own Google Cloud Project and generate OAuth 2.0 credentials. This ensures you have full control over your data and quota.
+Secure: Uses your own Google Cloud credentials ("Bring Your Own Key").
 
-### Step 1: Create a Google Cloud Project
+Control: Syncs to a dedicated folder (ObsidianVault) in Google Drive.
 
-1. Go to the [Google Cloud Console](https://console.cloud.google.com/).
-2. Create a new project (e.g., named "Obsidian Sync").
-3. Navigate to **APIs & Services > Library**.
-4. Search for "Google Drive API" and click **Enable**.
+Installation
 
-### Step 2: Configure OAuth Consent Screen
+Since this plugin is not yet in the official community list, you need to install it manually.
 
-1. Navigate to **APIs & Services > OAuth consent screen**.
-2. Select **External** User Type and click **Create**.
-3. Fill in the required fields:
-   - **App name**: Obsidian Sync
-   - **User support email**: Your email
-   - **Developer contact information**: Your email
-4. Click **Save and Continue**.
-5. On the **Scopes** step, click **Add or Remove Scopes**.
-6. Search for `drive` and select the scope `https://www.googleapis.com/auth/drive` (See, edit, create, and delete all of your Google Drive files).
-7. Click **Update** and then **Save and Continue**.
-8. On the **Test Users** step, add your own email address as a test user. This allows you to use the app without verification.
-9. Click **Save and Continue**.
+1. Build the Plugin
 
-### Step 3: Create Credentials
+Open a terminal in the project folder.
 
-1. Navigate to **APIs & Services > Credentials**.
-2. Click **Create Credentials** and select **OAuth client ID**.
-3. Select **Web application** as the Application type.
-4. Name it something like "Obsidian Plugin".
-5. Under **Authorized redirect URIs**, add:
-   `https://obsidian.md`
-6. Click **Create**.
-7. Copy the **Client ID** and **Client Secret**.
+Run npm install to install dependencies.
 
-### Step 4: Configure the Plugin
+Run npm run build to compile the code. This will generate a main.js file.
 
-1. Open Obsidian and go to **Settings > Community plugins**.
-2. Enable **Google Drive Sync**.
-3. Go to the plugin settings.
-4. Paste your **Client ID** and **Client Secret**.
-5. Click **Generate Auth URL**.
-6. A browser window will open. Select your Google account and allow access.
-   - *Note: You might see a "Google hasn't verified this app" warning. Click "Advanced" and then "Go to Obsidian Sync (unsafe)" since you are the developer.*
-7. After authorizing, you will be redirected to a page that looks like `obsidian.md`.
-8. Look at the URL in your browser's address bar. It will look like:
-   `https://obsidian.md/?code=4/0AcvD...&scope=...`
-9. Copy the long string after `code=` (up to the `&` symbol).
-10. Paste this code into the **Authorization Code** field in the plugin settings.
-11. Click **Login**.
+2. Install into Obsidian
 
-You should now be logged in!
+Open your Obsidian vault folder.
 
-## Usage
+Navigate to .obsidian/plugins/ (you might need to enable hidden files to see .obsidian).
 
-- Click the "Sync with Google Drive" ribbon icon (refresh icon) to start a sync.
-- Or use the command palette (Ctrl/Cmd + P) and search for "Sync Now".
-- The first sync will create a folder named `ObsidianVault` in your Google Drive root.
+Create a new folder named google-drive-sync.
 
-## Limitations
+Copy the following files from the project folder into this new folder:
 
-- **Deletions**: Currently, the plugin does not propagate deletions. If you delete a file locally, it will be re-downloaded from Drive. If you delete it on Drive, it will be re-uploaded. To delete a file permanently, you must delete it from both locations.
-- **Conflicts**: Simple "Last Write Wins" based on modification time.
+main.js
 
-## Development
+manifest.json
 
-To build this plugin:
+styles.css
 
-1. `npm install`
-2. `npm run build`
+3. Enable the Plugin
+
+Open Obsidian.
+
+Go to Settings > Community plugins.
+
+Turn off Restricted mode if enabled.
+
+Click the "Reload plugins" icon.
+
+Find Google Drive Sync in the list and enable it.
+
+Configuration Guide
+
+To use this plugin, you need to create your own Google Cloud Project and generate OAuth 2.0 credentials.
+
+Step 1: Create a Google Cloud Project
+
+Go to the Google Cloud Console.
+
+Create a new project (e.g., named "Obsidian Sync").
+
+Navigate to APIs & Services > Library.
+
+Search for "Google Drive API" and click Enable.
+
+Step 2: Configure OAuth Consent Screen
+
+Navigate to APIs & Services > OAuth consent screen.
+
+Select External User Type and click Create.
+
+Fill in the required fields (App name, User support email, Developer contact).
+
+Click Save and Continue.
+
+Add Scope: https://www.googleapis.com/auth/drive.
+
+Add your email to Test Users.
+
+Step 3: Create Credentials
+
+Navigate to APIs & Services > Credentials.
+
+Click Create Credentials > OAuth client ID.
+
+Select Web application.
+
+Important: Under Authorized redirect URIs, add exactly:
+https://obsidian.md
+
+Click Create and copy the Client ID and Client Secret.
+
+Step 4: Authorize in Obsidian
+
+In Obsidian, go to Settings > Google Drive Sync.
+
+Paste your Client ID and Client Secret.
+
+Click Generate Auth URL.
+
+Authorize the app in the browser.
+
+You will be redirected to obsidian.md. Copy the code parameter from the URL bar (everything after code= up to &).
+
+Paste the code into the plugin settings and click Login.
+
+Usage
+
+Click the "Sync with Google Drive" ribbon icon (refresh icon) to start a sync.
+
+Or use the command "Sync Now" from the Command Palette.
+
+The first sync creates ObsidianVault in Drive.
+
+Subsequent syncs will propagate changes and deletions.
+
+Development
+
+npm run dev: Build in watch mode.
